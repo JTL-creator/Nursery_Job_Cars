@@ -10,7 +10,7 @@ import { LogIn } from 'lucide-react';
 export default function LoginPage() {
   const { login, isAuthenticated } = useAuth();
   const { t, lang, setLang } = useI18n();
-  const [email, setEmail] = useState('admin@gdm.com');
+  const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -98,12 +98,6 @@ export default function LoginPage() {
           >
             {t('login.request')}
           </Link>
-        </div>
-
-        <div className="mt-6 p-3 rounded-lg bg-gray-50 dark:bg-gdm-blue text-[11px] text-gray-600 dark:text-gray-300">
-          <p className="font-semibold mb-1">{t('login.devCreds')}</p>
-          <p>Email: <code>admin@gdm.com</code></p>
-          <p>Senha: <code>Admin@123</code></p>
         </div>
       </div>
     </div>
