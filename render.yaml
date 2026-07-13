@@ -51,3 +51,19 @@ services:
         sync: false
       - key: SMTP_FROM
         sync: false
+
+  # Frontend web (React/Vite) como site estatico.
+  - type: web
+    name: gdm-job-cars-frontend
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
+    envVars:
+      - key: VITE_API_URL
+        value: https://gdm-job-cars-backend.onrender.com/api/v1
+    routes:
+      # SPA: qualquer rota cai no index.html (React Router).
+      - type: rewrite
+        source: /*
+        destination: /index.html

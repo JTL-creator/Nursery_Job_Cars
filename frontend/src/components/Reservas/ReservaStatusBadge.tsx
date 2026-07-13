@@ -7,6 +7,7 @@ const config: Record<StatusReserva, { bg: string; fg: string }> = {
   EM_USO: { bg: 'bg-purple-100', fg: 'text-purple-800' },
   CONCLUIDA: { bg: 'bg-green-100', fg: 'text-green-800' },
   CANCELADA: { bg: 'bg-red-100', fg: 'text-red-800' },
+  REJEITADA: { bg: 'bg-red-100', fg: 'text-red-800' },
   EXPIRADA: { bg: 'bg-gray-200', fg: 'text-gray-700' },
 };
 
