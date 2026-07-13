@@ -1,0 +1,12 @@
+{
+  "name": "GDM Job Cars",
+  "short_name": "Job Cars",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#092A3B",
+  "theme_color": "#092A3B",
+  "description": "Gestao operacional de Job Cars e maquinas agricolas",
+  "orientation": "portrait-primary",
+  "prefer_related_applications": false,
+  "icons": []
+}

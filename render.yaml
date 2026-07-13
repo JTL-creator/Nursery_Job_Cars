@@ -1,0 +1,53 @@
+# Render Blueprint - GDM Job Cars backend
+# Deploy: https://render.com -> New -> Blueprint -> conecte este repositorio.
+# O banco ja e externo (Neon), entao so publicamos o backend Node (Docker).
+#
+# Variaveis marcadas com `sync: false` NAO ficam no repositorio: defina os
+# valores no painel do Render (copie do seu backend/.env local).
+services:
+  - type: web
+    name: gdm-job-cars-backend
+    runtime: docker
+    plan: free
+    region: oregon
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    healthCheckPath: /api/v1/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # Banco Neon (cole a connection string no painel)
+      - key: DATABASE_URL
+        sync: false
+      # Segredos JWT (cole os valores do seu .env no painel)
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_REFRESH_SECRET
+        sync: false
+      - key: JWT_EXPIRES_IN
+        value: 15m
+      - key: JWT_REFRESH_EXPIRES_IN
+        value: 30d
+      # CORS: * funciona para o app mobile. Restrinja ao dominio do frontend web se necessario.
+      - key: CORS_ORIGIN
+        value: "*"
+      - key: RATE_LIMIT_WINDOW_MS
+        value: "60000"
+      - key: RATE_LIMIT_MAX
+        value: "100"
+      - key: LOGIN_RATE_WINDOW_MS
+        value: "900000"
+      - key: LOGIN_RATE_MAX
+        value: "10"
+      # SMTP (envio de senha temporaria). Cole os valores no painel.
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: SMTP_FROM
+        sync: false

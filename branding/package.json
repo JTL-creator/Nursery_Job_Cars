@@ -1,0 +1,9 @@
+{
+    "name": "gdm-branding",
+    "private": true,
+    "type": "module",
+    "version": "1.0.0",
+    "dependencies": {
+        "sharp": "^0.35.3"
+    }
+}

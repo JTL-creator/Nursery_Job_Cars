@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Bloqueia trafego HTTP (cleartext) por padrao: exige HTTPS em producao. -->
+    <base-config cleartextTrafficPermitted="false" />
+
+    <!-- Excecao apenas para desenvolvimento local:
+         - localhost / 127.0.0.1: celular via `adb reverse tcp:5000 tcp:5000`
+         - 10.0.2.2: emulador Android acessando o host -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">localhost</domain>
+        <domain includeSubdomains="true">127.0.0.1</domain>
+        <domain includeSubdomains="true">10.0.2.2</domain>
+    </domain-config>
+</network-security-config>

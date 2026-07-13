@@ -1,0 +1,36 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="lime" x1="600" y1="590" x2="820" y2="810" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#CFD83A"/>
+      <stop offset="1" stop-color="#B4BD00"/>
+    </linearGradient>
+  </defs>
+
+  <g transform="translate(0,-6)">
+  <!-- Sprout (GDM roots) behind the car -->
+  <g opacity="0.95">
+    <path d="M512 300 C512 340 512 360 512 392" stroke="#B4BD00" stroke-width="16" stroke-linecap="round"/>
+    <path d="M512 340 C470 322 440 330 424 360 C466 372 496 366 512 340 Z" fill="#B4BD00"/>
+    <path d="M512 328 C554 306 588 314 606 346 C560 360 528 354 512 328 Z" fill="#CFD83A"/>
+  </g>
+
+  <!-- Car -->
+  <g>
+    <path d="M356 452 L406 372 Q416 356 436 356 L590 356 Q612 356 624 375 L672 452 Z" fill="#FFFFFF"/>
+    <path d="M430 440 L462 390 L506 390 L506 440 Z" fill="#B4BD00"/>
+    <path d="M534 440 L534 390 L584 390 Q593 390 599 400 L624 440 Z" fill="#B4BD00"/>
+    <rect x="266" y="438" width="492" height="120" rx="48" fill="#FFFFFF"/>
+    <rect x="720" y="470" width="34" height="28" rx="12" fill="#B4BD00"/>
+    <circle cx="378" cy="560" r="62" fill="#0B1620"/>
+    <circle cx="378" cy="560" r="27" fill="#CFD83A"/>
+    <circle cx="612" cy="560" r="62" fill="#0B1620"/>
+    <circle cx="612" cy="560" r="27" fill="#CFD83A"/>
+  </g>
+
+  <!-- Check badge -->
+  <g>
+    <circle cx="708" cy="678" r="104" fill="url(#lime)" stroke="#071F2C" stroke-width="16"/>
+    <path d="M660 680 L694 716 L760 636" stroke="#071F2C" stroke-width="30" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </g>
+  </g>
+</svg>

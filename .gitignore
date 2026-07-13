@@ -1,0 +1,56 @@
+# ===== Segredos / ambiente (NUNCA versionar) =====
+.env
+.env.*
+!.env.example
+**/.env
+!**/.env.example
+
+# ===== Node / backend =====
+node_modules/
+**/node_modules/
+npm-debug.log*
+logs/
+*.log
+coverage/
+dist/
+
+# ===== Uploads gerados em runtime =====
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# ===== Flutter / mobile =====
+mobile/.dart_tool/
+mobile/.flutter-plugins
+mobile/.flutter-plugins-dependencies
+mobile/build/
+mobile/.pub-cache/
+mobile/.pub/
+mobile/android/.gradle/
+mobile/android/.kotlin/
+mobile/android/build/
+mobile/android/app/build/
+mobile/android/app/debug/
+mobile/android/app/profile/
+mobile/android/app/release/
+mobile/android/local.properties
+mobile/android/key.properties
+mobile/**/*.keystore
+mobile/**/*.jks
+*.apk
+*.aab
+
+# ===== Frontend (Vite/React) =====
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# ===== Branding =====
+branding/node_modules/
+branding/out/
+
+# ===== Sistema / IDE =====
+.DS_Store
+Thumbs.db
+.idea/
+*.iml
+.vscode/

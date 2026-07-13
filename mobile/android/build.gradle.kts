@@ -1,0 +1,41 @@
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
+val newBuildDir: Directory =
+    rootProject.layout.buildDirectory
+        .dir("../../build")
+        .get()
+rootProject.layout.buildDirectory.value(newBuildDir)
+
+subprojects {
+    val newSubprojectBuildDir: Directory = newBuildDir.dir(project.name)
+    project.layout.buildDirectory.value(newSubprojectBuildDir)
+}
+subprojects {
+    afterEvaluate {
+        if (project.hasProperty("android")) {
+            val androidExtension = project.extensions.findByName("android")
+            if (androidExtension is com.android.build.gradle.BaseExtension) {
+                if (androidExtension.compileSdkVersion == null ||
+                    androidExtension.compileSdkVersion == "android-33" ||
+                    androidExtension.compileSdkVersion == "android-34" ||
+                    androidExtension.compileSdkVersion == "android-35"
+                ) {
+                    androidExtension.compileSdkVersion(36)
+                }
+            }
+        }
+    }
+}
+
+subprojects {
+    project.evaluationDependsOn(":app")
+}
+
+tasks.register<Delete>("clean") {
+    delete(rootProject.layout.buildDirectory)
+}
