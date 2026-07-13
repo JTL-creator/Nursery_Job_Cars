@@ -30,7 +30,8 @@ async function main() {
         ('USUARIO', 'Usuário operacional padrão'),
         ('ADMINISTRADOR', 'Administrador da plataforma'),
         ('GERENTE', 'Gestor com acesso analítico'),
-        ('RESPONSAVEL', 'Responsável por ativos - aprova reservas')
+        ('RESPONSAVEL', 'Responsável por ativos - aprova reservas'),
+        ('VIGILANTE', 'Vigilante de portaria - confere liberação de saída dos veículos')
       ON CONFLICT (nome) DO NOTHING;
     `);
     log('OK', 'Perfis garantidos.');

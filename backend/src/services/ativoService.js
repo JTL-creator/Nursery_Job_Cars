@@ -30,7 +30,7 @@ async function listar(filtros = {}) {
   }
   if (filtros.q) {
     params.push(`%${filtros.q}%`);
-    where.push(`(a.codigo_interno ILIKE $${params.length} OR a.descricao ILIKE $${params.length})`);
+    where.push(`(a.codigo_interno ILIKE $${params.length} OR a.descricao ILIKE $${params.length} OR a.placa ILIKE $${params.length})`);
   }
 
   const limit = Math.min(Number(filtros.limit) || 50, 200);

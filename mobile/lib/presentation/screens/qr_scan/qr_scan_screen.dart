@@ -1,13 +1,16 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mobile_scanner/mobile_scanner.dart';
 import '../../../core/network/api_client.dart';
+import '../../../core/services/placa_utils.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../data/models/ativo.dart';
+import '../../../data/models/reserva.dart';
 import '../../../data/services/ativo_service.dart';
+import '../../../data/services/reserva_service.dart';
 import '../../widgets/gdm_button.dart';
 import '../../widgets/gdm_card.dart';
 import '../../widgets/loading_indicator.dart';
+import '../../widgets/plate_scanner.dart';
 
 class QrScanScreen extends StatefulWidget {
   const QrScanScreen({super.key});
@@ -17,46 +20,47 @@ class QrScanScreen extends StatefulWidget {
 }
 
 class _QrScanScreenState extends State<QrScanScreen> {
-  final MobileScannerController _controller = MobileScannerController(
-    detectionSpeed: DetectionSpeed.normal,
-    facing: CameraFacing.back,
-  );
   bool _processando = false;
   Ativo? _ativoEncontrado;
-  String? _codigoLido;
+  String? _placaLida;
   String? _mensagemErro;
+  List<Reserva> _reservas = [];
 
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  Future<void> _processarCodigo(String codigo) async {
+  Future<void> _processarPlaca(String placa) async {
     if (_processando) return;
     setState(() {
       _processando = true;
-      _codigoLido = codigo;
+      _placaLida = placa;
       _mensagemErro = null;
       _ativoEncontrado = null;
+      _reservas = [];
     });
 
-    await _controller.stop();
-
     try {
-      final ativo = await AtivoService.buscarPorCodigo(codigo);
+      final ativo = await AtivoService.buscarPorPlaca(placa);
       if (!mounted) return;
 
       if (ativo == null) {
         setState(() {
-          _mensagemErro = 'Nenhum ativo encontrado com codigo "$codigo".';
+          _mensagemErro =
+              'Nenhum veiculo encontrado com a placa "${PlacaUtils.formatar(placa)}".';
           _processando = false;
         });
         return;
       }
 
+      // Busca reservas ativas do usuario para este veiculo.
+      List<Reserva> ativas = [];
+      try {
+        final todas = await ReservaService.minhasReservas();
+        ativas =
+            todas.where((r) => r.ativoId == ativo.id && r.estaAtiva).toList();
+      } catch (_) {/* segue sem reservas */}
+
+      if (!mounted) return;
       setState(() {
         _ativoEncontrado = ativo;
+        _reservas = ativas;
         _processando = false;
       });
     } catch (e) {
@@ -68,52 +72,36 @@ class _QrScanScreenState extends State<QrScanScreen> {
     }
   }
 
-  void _onDetect(BarcodeCapture capture) {
-    final code = capture.barcodes.firstOrNull?.rawValue;
-    if (code == null || code.isEmpty) return;
-    _processarCodigo(code.trim());
+  /// Reserva pronta para iniciar o check-list de retirada (status CONFIRMADA).
+  Reserva? get _reservaRetirada {
+    for (final r in _reservas) {
+      if (r.podeIniciar) return r;
+    }
+    return null;
   }
 
-  Future<void> _entradaManual() async {
-    final ctrl = TextEditingController();
-    final res = await showDialog<String>(
-      context: context,
-      builder: (dialogCtx) => AlertDialog(
-        title: const Text('Entrada manual'),
-        content: TextField(
-          controller: ctrl,
-          autofocus: true,
-          textCapitalization: TextCapitalization.characters,
-          decoration: const InputDecoration(
-            labelText: 'Codigo do ativo',
-            hintText: 'Ex.: VEIC-001',
-            border: OutlineInputBorder(),
-          ),
-          onSubmitted: (v) => Navigator.pop(dialogCtx, v.trim()),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogCtx),
-            child: const Text('Cancelar'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(dialogCtx, ctrl.text.trim()),
-            child: const Text('Buscar'),
-          ),
-        ],
-      ),
-    );
-    ctrl.dispose();
-    if (res != null && res.isNotEmpty) _processarCodigo(res);
+  /// Reserva pronta para o check-list de devolucao (status EM_USO).
+  Reserva? get _reservaDevolucao {
+    for (final r in _reservas) {
+      if (r.podeConcluir) return r;
+    }
+    return null;
   }
 
-  Future<void> _escanearNovamente() async {
+  void _escanearNovamente() {
     setState(() {
       _ativoEncontrado = null;
-      _codigoLido = null;
+      _placaLida = null;
       _mensagemErro = null;
+      _reservas = [];
     });
-    await _controller.start();
+  }
+
+  void _abrirChecklist(Reserva reserva, String etapa) {
+    context.push('/checklist-form', extra: {
+      'reserva': reserva,
+      'etapa': etapa,
+    });
   }
 
   void _irParaReserva() {
@@ -134,66 +122,18 @@ class _QrScanScreenState extends State<QrScanScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Scanner ou resultado
+          // Leitor de placa (OCR) ou resultado
           if (_ativoEncontrado == null && _mensagemErro == null) ...[
-            ClipRRect(
-              borderRadius: BorderRadius.circular(14),
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  SizedBox(
-                    height: 300,
-                    child: MobileScanner(
-                      controller: _controller,
-                      onDetect: _onDetect,
-                    ),
-                  ),
-                  // Frame de mira
-                  Container(
-                    width: 200,
-                    height: 200,
-                    decoration: BoxDecoration(
-                      border: Border.all(color: AppColors.gdmLime, width: 3),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                  ),
-                  if (_processando)
-                    Container(
-                      color: Colors.black54,
-                      child: const Center(child: LoadingIndicator()),
-                    ),
-                ],
+            if (_processando)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 80),
+                child: Center(child: LoadingIndicator()),
+              )
+            else
+              PlateScanner(
+                onPlaca: _processarPlaca,
+                legenda: 'Aponte a camera para a placa do veiculo',
               ),
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              'Aponte para o QR Code do ativo',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 13, color: Colors.grey),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () => _controller.toggleTorch(),
-                    icon: const Icon(Icons.flashlight_on_outlined),
-                    label: const Text('Lanterna'),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: _entradaManual,
-                    icon: const Icon(Icons.keyboard),
-                    label: const Text('Manual'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.gdmBlue,
-                    ),
-                  ),
-                ),
-              ],
-            ),
           ],
 
           // Erro: codigo nao encontrado
@@ -213,7 +153,7 @@ class _QrScanScreenState extends State<QrScanScreen> {
                   ),
                   const SizedBox(height: 12),
                   const Text(
-                    'Ativo nao encontrado',
+                    'Veiculo nao encontrado',
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                   ),
                   const SizedBox(height: 4),
@@ -222,7 +162,7 @@ class _QrScanScreenState extends State<QrScanScreen> {
                     textAlign: TextAlign.center,
                     style: const TextStyle(fontSize: 12, color: Colors.grey),
                   ),
-                  if (_codigoLido != null) ...[
+                  if (_placaLida != null) ...[
                     const SizedBox(height: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(
@@ -232,7 +172,7 @@ class _QrScanScreenState extends State<QrScanScreen> {
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
-                        'Codigo lido: $_codigoLido',
+                        'Placa lida: ${PlacaUtils.formatar(_placaLida)}',
                         style: const TextStyle(
                             fontSize: 11, fontFamily: 'monospace'),
                       ),
@@ -241,8 +181,8 @@ class _QrScanScreenState extends State<QrScanScreen> {
                   const SizedBox(height: 12),
                   GdmButton(
                     onPressed: _escanearNovamente,
-                    label: 'Escanear outro',
-                    icon: Icons.qr_code_scanner,
+                    label: 'Ler outra placa',
+                    icon: Icons.center_focus_strong,
                     expand: true,
                   ),
                 ],
@@ -335,42 +275,63 @@ class _QrScanScreenState extends State<QrScanScreen> {
               ),
             ),
             const SizedBox(height: 12),
-            if (_ativoEncontrado!.status == 'DISPONIVEL')
+            // Acao principal: check-list conforme a reserva ativa do usuario.
+            if (_reservaRetirada != null)
               GdmButton(
-                onPressed: _irParaReserva,
-                label: 'Reservar este ativo',
-                icon: Icons.bookmark_add,
+                onPressed: () => _abrirChecklist(_reservaRetirada!, 'RETIRADA'),
+                label: 'Iniciar check-list (Retirada)',
+                icon: Icons.assignment_turned_in,
                 expand: true,
               )
-            else
+            else if (_reservaDevolucao != null)
+              GdmButton(
+                onPressed: () =>
+                    _abrirChecklist(_reservaDevolucao!, 'DEVOLUCAO'),
+                label: 'Concluir check-list (Devolucao)',
+                icon: Icons.assignment_return,
+                expand: true,
+              )
+            else ...[
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: Colors.orange.shade50,
+                  color: Colors.blue.shade50,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
                   children: [
                     Icon(Icons.info_outline,
-                        size: 18, color: Colors.orange.shade700),
+                        size: 18, color: Colors.blue.shade700),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Este ativo nao esta disponivel para reserva no momento.',
+                        'Voce nao tem reserva ativa para este veiculo. '
+                        'Faca uma reserva para registrar o check-list.',
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.orange.shade900,
+                          color: Colors.blue.shade900,
                         ),
                       ),
                     ),
                   ],
                 ),
               ),
+              if (_ativoEncontrado!.status == 'DISPONIVEL') ...[
+                const SizedBox(height: 8),
+                GdmButton(
+                  onPressed: _irParaReserva,
+                  label: 'Reservar este veiculo',
+                  icon: Icons.bookmark_add,
+                  variant: GdmButtonVariant.secondary,
+                  expand: true,
+                ),
+              ],
+            ],
             const SizedBox(height: 8),
             OutlinedButton.icon(
               onPressed: _escanearNovamente,
-              icon: const Icon(Icons.qr_code_scanner, size: 16),
-              label: const Text('Escanear outro'),
+              icon: const Icon(Icons.center_focus_strong, size: 16),
+              label: const Text('Ler outra placa'),
             ),
           ],
         ],

@@ -64,7 +64,7 @@ class SelecaoModuloScreen extends StatelessWidget {
                   'O que voce quer gerenciar agora?',
                   style: TextStyle(color: AppColors.gdmLime, fontSize: 14),
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: 24),
                 Expanded(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -75,7 +75,7 @@ class SelecaoModuloScreen extends StatelessWidget {
                         descricao: 'Carros e demais veiculos da frota',
                         onTap: () => _selecionar(context, AppModule.veiculos),
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 16),
                       _ModuloCard(
                         icon: Icons.agriculture,
                         titulo: 'Maquinas',
@@ -122,7 +122,7 @@ class _ModuloCard extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(18),
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 20),
+          padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
           child: Row(
             children: [
               Container(

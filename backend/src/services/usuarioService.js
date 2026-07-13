@@ -1,7 +1,7 @@
 const bcrypt = require('bcryptjs');
 const pool = require('../config/database');
 
-const PERFIS_VALIDOS = ['USUARIO', 'ADMINISTRADOR', 'GERENTE', 'RESPONSAVEL'];
+const PERFIS_VALIDOS = ['USUARIO', 'ADMINISTRADOR', 'GERENTE', 'RESPONSAVEL', 'VIGILANTE'];
 const STATUS_VALIDOS = ['ATIVO', 'INATIVO', 'BLOQUEADO'];
 
 async function listar(filtros = {}) {

@@ -28,6 +28,12 @@ class AuthProvider extends ChangeNotifier {
       _perfil == 'ADMINISTRADOR' ||
       _perfil == 'GERENTE';
 
+  /// Perfis com acesso a portaria (conferencia de saida dos veiculos).
+  bool get podePortaria => _perfil == 'VIGILANTE' || _perfil == 'ADMINISTRADOR';
+
+  /// Vigilante de portaria: fluxo focado apenas na conferencia de saida.
+  bool get isVigilante => _perfil == 'VIGILANTE';
+
   Future<void> bootstrap() async {
     _loading = true;
     notifyListeners();

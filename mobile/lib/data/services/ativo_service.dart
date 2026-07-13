@@ -238,6 +238,37 @@ class AtivoService {
     }
   }
 
+  /// Busca um ativo pela placa (usado pela leitura de placa/OCR).
+  /// Tenta API primeiro, depois cache offline.
+  static Future<Ativo?> buscarPorPlaca(String placa) async {
+    final alvo = placa.toUpperCase().replaceAll(RegExp(r'[^A-Z0-9]'), '');
+    if (alvo.isEmpty) return null;
+
+    String norm(String? p) =>
+        (p ?? '').toUpperCase().replaceAll(RegExp(r'[^A-Z0-9]'), '');
+
+    try {
+      final resp = await _dio.get('/ativos', queryParameters: {
+        'q': placa,
+        'limit': 10,
+      });
+      final list = (resp.data['data'] as List)
+          .map((e) => Ativo.fromJson(Map<String, dynamic>.from(e as Map)))
+          .toList();
+      final exact = list.where((a) => norm(a.placa) == alvo).toList();
+      if (exact.isNotEmpty) return exact.first;
+      return null;
+    } catch (_) {
+      final cache = OfflineCacheService.getAtivosCache();
+      for (final c in cache) {
+        if (norm(c['placa']?.toString()) == alvo) {
+          return Ativo.fromJson(Map<String, dynamic>.from(c));
+        }
+      }
+      return null;
+    }
+  }
+
   static Future<List<Ativo>> disponibilidade({
     required DateTime inicio,
     required DateTime fim,

@@ -16,7 +16,7 @@ interface Props {
     onSaved: () => void;
 }
 
-const PERFIS: PerfilNome[] = ['USUARIO', 'RESPONSAVEL', 'GERENTE', 'ADMINISTRADOR'];
+const PERFIS: PerfilNome[] = ['USUARIO', 'RESPONSAVEL', 'GERENTE', 'ADMINISTRADOR', 'VIGILANTE'];
 
 interface FormState {
     nome_completo: string;

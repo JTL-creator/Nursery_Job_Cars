@@ -20,16 +20,37 @@ class MainShell extends StatefulWidget {
 }
 
 class _MainShellState extends State<MainShell> {
-  static const _tabs = <String>[
-    '/home',
-    '/disponibilidade',
-    '/reservas',
-    '/qr-scan',
-    '/perfil',
-  ];
-
   bool _ultimaMensagemMostrada = false;
   int _pendentes = 0;
+
+  /// Abas do menu inferior, dependentes do perfil.
+  /// - Vigilante: fluxo focado (Portaria + Perfil).
+  /// - Administrador: abas completas + Portaria.
+  /// - Demais perfis: abas completas.
+  List<({String path, IconData icon, String label})> _tabsPara({
+    required bool isVigilante,
+    required bool podePortaria,
+  }) {
+    if (isVigilante) {
+      return [
+        (path: '/portaria', icon: Icons.shield_outlined, label: 'Portaria'),
+        (path: '/perfil', icon: Icons.person_outline, label: 'Perfil'),
+      ];
+    }
+    return [
+      (path: '/home', icon: Icons.home_outlined, label: 'Home'),
+      (path: '/disponibilidade', icon: Icons.search, label: 'Disponib.'),
+      (
+        path: '/reservas',
+        icon: Icons.calendar_month_outlined,
+        label: 'Reservas'
+      ),
+      (path: '/qr-scan', icon: Icons.center_focus_strong, label: 'Placa'),
+      if (podePortaria)
+        (path: '/portaria', icon: Icons.shield_outlined, label: 'Portaria'),
+      (path: '/perfil', icon: Icons.person_outline, label: 'Perfil'),
+    ];
+  }
 
   @override
   void initState() {
@@ -89,9 +110,12 @@ class _MainShellState extends State<MainShell> {
     }
   }
 
-  int _currentIndex(BuildContext context) {
+  int _currentIndex(
+    BuildContext context,
+    List<({String path, IconData icon, String label})> tabs,
+  ) {
     final loc = GoRouterState.of(context).matchedLocation;
-    final idx = _tabs.indexWhere((t) => loc.startsWith(t));
+    final idx = tabs.indexWhere((t) => loc.startsWith(t.path));
     return idx < 0 ? 0 : idx;
   }
 
@@ -101,6 +125,10 @@ class _MainShellState extends State<MainShell> {
     final auth = context.watch<AuthProvider>();
     final module = context.watch<ModuleProvider>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final tabs = _tabsPara(
+      isVigilante: auth.isVigilante,
+      podePortaria: auth.podePortaria,
+    );
 
     return Scaffold(
       appBar: AppBar(
@@ -151,21 +179,15 @@ class _MainShellState extends State<MainShell> {
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex(context),
+        type: BottomNavigationBarType.fixed,
+        currentIndex: _currentIndex(context, tabs),
         onTap: (i) {
           HapticFeedback.selectionClick();
-          context.go(_tabs[i]);
+          context.go(tabs[i].path);
         },
-        items: const [
-          BottomNavigationBarItem(
-              icon: Icon(Icons.home_outlined), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Disponib.'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.calendar_month_outlined), label: 'Reservas'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.qr_code_scanner), label: 'QR Scan'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.person_outline), label: 'Perfil'),
+        items: [
+          for (final t in tabs)
+            BottomNavigationBarItem(icon: Icon(t.icon), label: t.label),
         ],
       ),
     );

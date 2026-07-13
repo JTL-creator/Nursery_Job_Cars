@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/services/location_service.dart';
+import '../../../core/services/placa_utils.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../data/models/checklist_template.dart';
 import '../../../data/models/reserva.dart';
@@ -14,6 +15,7 @@ import '../../../data/services/checklist_service.dart';
 import '../../providers/sync_provider.dart';
 import '../../widgets/gdm_button.dart';
 import '../../widgets/gdm_card.dart';
+import '../../widgets/leitor_placa_sheet.dart';
 import '../../widgets/loading_indicator.dart';
 
 class ChecklistFormScreen extends StatefulWidget {
@@ -44,6 +46,10 @@ class _ChecklistFormScreenState extends State<ChecklistFormScreen> {
   final Map<String, String> _fotos = {};
   Position? _posicao;
 
+  // Conferencia de placa (opcional): compara o veiculo fisico com a reserva.
+  String? _placaLida;
+  bool? _placaConfere;
+
   @override
   void initState() {
     super.initState();
@@ -73,9 +79,9 @@ class _ChecklistFormScreenState extends State<ChecklistFormScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(
-            'Template indisponivel: ${ApiClient.extractMessage(e)}'
-          )),
+          SnackBar(
+              content: Text(
+                  'Template indisponivel: ${ApiClient.extractMessage(e)}')),
         );
         setState(() => _carregando = false);
       }
@@ -91,6 +97,20 @@ class _ChecklistFormScreenState extends State<ChecklistFormScreen> {
         _valores['gps_long'] = pos.longitude;
       });
     }
+  }
+
+  Future<void> _conferirPlaca() async {
+    final placa = await showLeitorPlacaSheet(
+      context,
+      titulo: 'Conferir placa do veiculo',
+    );
+    if (placa == null || !mounted) return;
+    final lida = PlacaUtils.normalizar(placa);
+    final esperada = PlacaUtils.normalizar(widget.reserva.placa);
+    setState(() {
+      _placaLida = placa;
+      _placaConfere = esperada.isNotEmpty && lida == esperada;
+    });
   }
 
   Future<void> _tirarFoto(String chave) async {
@@ -140,14 +160,15 @@ class _ChecklistFormScreenState extends State<ChecklistFormScreen> {
     }
   }
 
-  String _tituloEtapa() =>
-      widget.etapa == 'RETIRADA' ? 'Check-list de Retirada' : 'Check-list de Devolucao';
+  String _tituloEtapa() => widget.etapa == 'RETIRADA'
+      ? 'Check-list de Retirada'
+      : 'Check-list de Devolucao';
 
   bool _ehFoto(ChecklistTemplateItem item) =>
-      item.chaveItem.startsWith('foto_') || item.descricao.toLowerCase().contains('foto');
+      item.chaveItem.startsWith('foto_') ||
+      item.descricao.toLowerCase().contains('foto');
 
-  bool _ehGps(ChecklistTemplateItem item) =>
-      item.chaveItem.startsWith('gps_');
+  bool _ehGps(ChecklistTemplateItem item) => item.chaveItem.startsWith('gps_');
 
   Future<void> _enviar() async {
     if (!_formKey.currentState!.validate()) return;
@@ -164,7 +185,8 @@ class _ChecklistFormScreenState extends State<ChecklistFormScreen> {
     if (faltando.isNotEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Preencha os campos obrigatorios: ${faltando.join(", ")}'),
+          content:
+              Text('Preencha os campos obrigatorios: ${faltando.join(", ")}'),
         ),
       );
       return;
@@ -181,7 +203,9 @@ class _ChecklistFormScreenState extends State<ChecklistFormScreen> {
             'valor_numero': v is num ? v : double.tryParse(v.toString()),
           if (it.tipoCampo == 'booleano' && v != null)
             'valor_booleano': v == true || v == 'true',
-          if (it.tipoCampo != 'numero' && it.tipoCampo != 'booleano' && v != null)
+          if (it.tipoCampo != 'numero' &&
+              it.tipoCampo != 'booleano' &&
+              v != null)
             'valor_texto': v.toString(),
           'obrigatorio': it.obrigatorio,
           'ordem': it.ordem,
@@ -194,7 +218,8 @@ class _ChecklistFormScreenState extends State<ChecklistFormScreen> {
         etapa: widget.etapa,
         itens: itensPayload,
         local: _localCtrl.text.trim().isEmpty ? null : _localCtrl.text.trim(),
-        responsavel: _respCtrl.text.trim().isEmpty ? null : _respCtrl.text.trim(),
+        responsavel:
+            _respCtrl.text.trim().isEmpty ? null : _respCtrl.text.trim(),
         observacoes: _obsCtrl.text.trim().isEmpty ? null : _obsCtrl.text.trim(),
       );
 
@@ -244,10 +269,14 @@ class _ChecklistFormScreenState extends State<ChecklistFormScreen> {
     if (_ehFoto(item)) return _buildCampoFoto(item);
     if (_ehGps(item)) return _buildCampoGps(item);
     switch (item.tipoCampo) {
-      case 'numero': return _buildCampoNumero(item);
-      case 'booleano': return _buildCampoBooleano(item);
-      case 'selecao': return _buildCampoSelecao(item);
-      default: return _buildCampoTexto(item);
+      case 'numero':
+        return _buildCampoNumero(item);
+      case 'booleano':
+        return _buildCampoBooleano(item);
+      case 'selecao':
+        return _buildCampoSelecao(item);
+      default:
+        return _buildCampoTexto(item);
     }
   }
 
@@ -261,7 +290,10 @@ class _ChecklistFormScreenState extends State<ChecklistFormScreen> {
             text: label,
             style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
             children: obrig
-                ? [const TextSpan(text: ' *', style: TextStyle(color: Colors.red))]
+                ? [
+                    const TextSpan(
+                        text: ' *', style: TextStyle(color: Colors.red))
+                  ]
                 : null,
           )),
           const SizedBox(height: 6),
@@ -272,7 +304,8 @@ class _ChecklistFormScreenState extends State<ChecklistFormScreen> {
   }
 
   Widget _buildCampoTexto(ChecklistTemplateItem item) => _campoBase(
-        item.descricao, item.obrigatorio,
+        item.descricao,
+        item.obrigatorio,
         TextFormField(
           maxLines: item.descricao.toLowerCase().contains('obs') ? 3 : 1,
           onChanged: (v) => _valores[item.chaveItem] = v,
@@ -281,7 +314,8 @@ class _ChecklistFormScreenState extends State<ChecklistFormScreen> {
       );
 
   Widget _buildCampoNumero(ChecklistTemplateItem item) => _campoBase(
-        item.descricao, item.obrigatorio,
+        item.descricao,
+        item.obrigatorio,
         TextFormField(
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           onChanged: (v) => _valores[item.chaveItem] = double.tryParse(v),
@@ -295,7 +329,8 @@ class _ChecklistFormScreenState extends State<ChecklistFormScreen> {
   Widget _buildCampoBooleano(ChecklistTemplateItem item) {
     final atual = _valores[item.chaveItem] == true;
     return _campoBase(
-      item.descricao, item.obrigatorio,
+      item.descricao,
+      item.obrigatorio,
       Row(
         children: [
           ChoiceChip(
@@ -320,15 +355,20 @@ class _ChecklistFormScreenState extends State<ChecklistFormScreen> {
     final opcoes = item.opcoes ?? [];
     final atual = _valores[item.chaveItem]?.toString();
     return _campoBase(
-      item.descricao, item.obrigatorio,
+      item.descricao,
+      item.obrigatorio,
       Wrap(
-        spacing: 6, runSpacing: 6,
-        children: opcoes.map((o) => ChoiceChip(
-          label: Text(o),
-          selected: atual == o,
-          selectedColor: AppColors.gdmLime,
-          onSelected: (_) => setState(() => _valores[item.chaveItem] = o),
-        )).toList(),
+        spacing: 6,
+        runSpacing: 6,
+        children: opcoes
+            .map((o) => ChoiceChip(
+                  label: Text(o),
+                  selected: atual == o,
+                  selectedColor: AppColors.gdmLime,
+                  onSelected: (_) =>
+                      setState(() => _valores[item.chaveItem] = o),
+                ))
+            .toList(),
       ),
     );
   }
@@ -336,7 +376,8 @@ class _ChecklistFormScreenState extends State<ChecklistFormScreen> {
   Widget _buildCampoFoto(ChecklistTemplateItem item) {
     final foto = _fotos[item.chaveItem];
     return _campoBase(
-      item.descricao, item.obrigatorio,
+      item.descricao,
+      item.obrigatorio,
       Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -345,7 +386,8 @@ class _ChecklistFormScreenState extends State<ChecklistFormScreen> {
               borderRadius: BorderRadius.circular(10),
               child: Image.memory(
                 base64Decode(foto.split(',').last),
-                height: 180, fit: BoxFit.cover,
+                height: 180,
+                fit: BoxFit.cover,
               ),
             )
           else
@@ -360,7 +402,8 @@ class _ChecklistFormScreenState extends State<ChecklistFormScreen> {
               child: const Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.add_a_photo_outlined, size: 36, color: Colors.grey),
+                  Icon(Icons.add_a_photo_outlined,
+                      size: 36, color: Colors.grey),
                   SizedBox(height: 6),
                   Text('Nenhuma foto', style: TextStyle(color: Colors.grey)),
                 ],
@@ -371,7 +414,9 @@ class _ChecklistFormScreenState extends State<ChecklistFormScreen> {
             onPressed: () => _tirarFoto(item.chaveItem),
             label: foto == null ? 'Tirar / escolher foto' : 'Trocar foto',
             icon: Icons.camera_alt,
-            variant: foto == null ? GdmButtonVariant.primary : GdmButtonVariant.secondary,
+            variant: foto == null
+                ? GdmButtonVariant.primary
+                : GdmButtonVariant.secondary,
             expand: true,
           ),
         ],
@@ -382,7 +427,8 @@ class _ChecklistFormScreenState extends State<ChecklistFormScreen> {
   Widget _buildCampoGps(ChecklistTemplateItem item) {
     final v = _valores[item.chaveItem];
     return _campoBase(
-      item.descricao, false,
+      item.descricao,
+      false,
       Container(
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
@@ -392,7 +438,8 @@ class _ChecklistFormScreenState extends State<ChecklistFormScreen> {
         child: Row(
           children: [
             Icon(Icons.my_location,
-                color: v != null ? Colors.green.shade700 : Colors.grey, size: 16),
+                color: v != null ? Colors.green.shade700 : Colors.grey,
+                size: 16),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
@@ -447,33 +494,48 @@ class _ChecklistFormScreenState extends State<ChecklistFormScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                widget.etapa == 'RETIRADA' ? 'Retirada' : 'Devolucao',
+                                widget.etapa == 'RETIRADA'
+                                    ? 'Retirada'
+                                    : 'Devolucao',
                                 style: const TextStyle(
                                   color: AppColors.gdmLime,
-                                  fontSize: 12, fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
                               const SizedBox(height: 4),
                               Text(
                                 widget.reserva.codigoInterno ?? '—',
                                 style: const TextStyle(
-                                  color: Colors.white, fontSize: 18,
+                                  color: Colors.white,
+                                  fontSize: 18,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
                               Text(
                                 widget.reserva.ativoDescricao ?? '',
-                                style: const TextStyle(color: Colors.white70, fontSize: 12),
+                                style: const TextStyle(
+                                    color: Colors.white70, fontSize: 12),
                               ),
                               const SizedBox(height: 6),
                               Text(
                                 'Periodo: ${fmt.format(widget.reserva.dataHoraInicio)} -> ${fmt.format(widget.reserva.dataHoraFim)}',
-                                style: const TextStyle(color: Colors.white70, fontSize: 11),
+                                style: const TextStyle(
+                                    color: Colors.white70, fontSize: 11),
                               ),
                             ],
                           ),
                         ),
                         const SizedBox(height: 12),
+                        if ((widget.reserva.placa ?? '').isNotEmpty) ...[
+                          _ConferenciaPlaca(
+                            placaReservada: widget.reserva.placa!,
+                            placaLida: _placaLida,
+                            confere: _placaConfere,
+                            onConferir: _conferirPlaca,
+                          ),
+                          const SizedBox(height: 12),
+                        ],
                         if (_posicao != null)
                           Container(
                             padding: const EdgeInsets.all(10),
@@ -534,7 +596,8 @@ class _ChecklistFormScreenState extends State<ChecklistFormScreen> {
                           title: 'Itens do check-list',
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: _template!.itens.map(_buildCampo).toList(),
+                            children:
+                                _template!.itens.map(_buildCampo).toList(),
                           ),
                         ),
                         const SizedBox(height: 20),
@@ -552,6 +615,115 @@ class _ChecklistFormScreenState extends State<ChecklistFormScreen> {
                     ),
                   ),
                 ),
+    );
+  }
+}
+
+/// Card de conferencia de placa: compara o veiculo fisico (via OCR) com a
+/// placa da reserva. Nao bloqueia o envio; serve como conferencia visual.
+class _ConferenciaPlaca extends StatelessWidget {
+  final String placaReservada;
+  final String? placaLida;
+  final bool? confere;
+  final Future<void> Function() onConferir;
+
+  const _ConferenciaPlaca({
+    required this.placaReservada,
+    required this.placaLida,
+    required this.confere,
+    required this.onConferir,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GdmCard(
+      title: 'Conferencia de placa',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.confirmation_number_outlined,
+                  size: 18, color: Colors.grey),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Placa reservada: ${PlacaUtils.formatar(placaReservada)}',
+                  style: const TextStyle(fontSize: 13),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          if (confere == null)
+            OutlinedButton.icon(
+              onPressed: onConferir,
+              icon: const Icon(Icons.center_focus_strong, size: 18),
+              label: const Text('Conferir placa do veiculo'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.gdmBlue,
+              ),
+            )
+          else if (confere == true)
+            _ResultadoConferencia(
+              cor: Colors.green,
+              icone: Icons.check_circle,
+              texto: 'Placa conferida: ${PlacaUtils.formatar(placaLida)}',
+            )
+          else ...[
+            _ResultadoConferencia(
+              cor: Colors.red,
+              icone: Icons.warning_amber_rounded,
+              texto: 'Placa lida (${PlacaUtils.formatar(placaLida)}) difere '
+                  'da reservada (${PlacaUtils.formatar(placaReservada)}).',
+            ),
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
+              onPressed: onConferir,
+              icon: const Icon(Icons.refresh, size: 18),
+              label: const Text('Conferir novamente'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.gdmBlue,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _ResultadoConferencia extends StatelessWidget {
+  final MaterialColor cor;
+  final IconData icone;
+  final String texto;
+
+  const _ResultadoConferencia({
+    required this.cor,
+    required this.icone,
+    required this.texto,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: cor.shade50,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          Icon(icone, color: cor.shade700, size: 18),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              texto,
+              style: TextStyle(fontSize: 12, color: cor.shade900),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -1,6 +1,6 @@
 const Joi = require('joi');
 
-const perfis = ['USUARIO', 'ADMINISTRADOR', 'GERENTE', 'RESPONSAVEL'];
+const perfis = ['USUARIO', 'ADMINISTRADOR', 'GERENTE', 'RESPONSAVEL', 'VIGILANTE'];
 const status = ['ATIVO', 'INATIVO', 'BLOQUEADO'];
 
 const criarSchema = Joi.object({

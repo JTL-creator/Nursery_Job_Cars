@@ -20,6 +20,7 @@ import '../presentation/screens/admin_templates/admin_templates_screen.dart';
 import '../presentation/screens/checklists/checklists_screen.dart';
 import '../presentation/screens/checklist_form/checklist_form_screen.dart';
 import '../presentation/screens/qr_scan/qr_scan_screen.dart';
+import '../presentation/screens/portaria/portaria_screen.dart';
 import '../presentation/screens/perfil/perfil_screen.dart';
 import '../presentation/screens/sync/sync_screen.dart';
 import '../presentation/screens/notificacoes/notificacoes_screen.dart';
@@ -38,8 +39,17 @@ GoRouter appRouter(BuildContext context) {
           loc == '/onboarding' ||
           loc == '/';
       if (!auth.isAuthenticated && !isLoggingIn) return '/login';
-      if (auth.isAuthenticated && (loc == '/login' || loc == '/')) {
-        return '/selecionar-modulo';
+      if (auth.isAuthenticated) {
+        // Vigilante nao usa modulos: vai direto para a portaria.
+        if (auth.isVigilante) {
+          if (loc == '/login' || loc == '/' || loc == '/selecionar-modulo') {
+            return '/portaria';
+          }
+          return null;
+        }
+        if (loc == '/login' || loc == '/') {
+          return '/selecionar-modulo';
+        }
       }
       return null;
     },
@@ -122,6 +132,10 @@ GoRouter appRouter(BuildContext context) {
             builder: (_, __) => const ChecklistsScreen(),
           ),
           GoRoute(path: '/qr-scan', builder: (_, __) => const QrScanScreen()),
+          GoRoute(
+            path: '/portaria',
+            builder: (_, __) => const PortariaScreen(),
+          ),
           GoRoute(path: '/perfil', builder: (_, __) => const PerfilScreen()),
         ],
       ),

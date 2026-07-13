@@ -60,10 +60,10 @@ class ListSkeleton extends StatelessWidget {
           color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(14),
         ),
-        child: Skeleton(
+        child: const Skeleton(
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: const [
+            children: [
               SkeletonBox(width: 46, height: 46, radius: 12),
               SizedBox(width: 12),
               Expanded(

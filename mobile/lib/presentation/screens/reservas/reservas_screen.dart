@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../../core/network/api_client.dart';
+import '../../../core/services/placa_utils.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../data/models/reserva.dart';
 import '../../../data/services/reserva_service.dart';
@@ -10,6 +11,7 @@ import '../../providers/module_provider.dart';
 import '../../providers/sync_provider.dart';
 import '../../widgets/empty_state.dart';
 import '../../widgets/gdm_card.dart';
+import '../../widgets/leitor_placa_sheet.dart';
 import '../../widgets/pending_sync_chip.dart';
 import '../../widgets/skeleton.dart';
 import '../../widgets/status_badge.dart';
@@ -128,6 +130,45 @@ class _ReservasScreenState extends State<ReservasScreen>
     if (ok == true) acao();
   }
 
+  /// Le a placa do veiculo e abre o check-list da reserva ativa correspondente.
+  Future<void> _lerPlacaParaChecklist() async {
+    final placa = await showLeitorPlacaSheet(
+      context,
+      titulo: 'Ler placa para o check-list',
+    );
+    if (placa == null || !mounted) return;
+
+    final alvo = PlacaUtils.normalizar(placa);
+    Reserva? achada;
+    for (final r in _todas) {
+      if (PlacaUtils.normalizar(r.placa) == alvo &&
+          (r.podeIniciar || r.podeConcluir)) {
+        achada = r;
+        break;
+      }
+    }
+
+    if (achada == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.orange.shade700,
+          content: Text(
+            'Nenhuma reserva ativa encontrada para a placa '
+            '${PlacaUtils.formatar(placa)}.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    final etapa = achada.podeIniciar ? 'RETIRADA' : 'DEVOLUCAO';
+    await context.push('/checklist-form', extra: {
+      'reserva': achada,
+      'etapa': etapa,
+    });
+    if (mounted) _carregar();
+  }
+
   @override
   Widget build(BuildContext context) {
     final module = context.watch<ModuleProvider>();
@@ -139,14 +180,26 @@ class _ReservasScreenState extends State<ReservasScreen>
       children: [
         Material(
           color: Theme.of(context).colorScheme.surface,
-          child: TabBar(
-            controller: _tab,
-            isScrollable: true,
-            tabs: const [
-              Tab(text: 'Todas'),
-              Tab(text: 'Ativas'),
-              Tab(text: 'Concluidas'),
-              Tab(text: 'Canceladas'),
+          child: Row(
+            children: [
+              Expanded(
+                child: TabBar(
+                  controller: _tab,
+                  isScrollable: true,
+                  tabs: const [
+                    Tab(text: 'Todas'),
+                    Tab(text: 'Ativas'),
+                    Tab(text: 'Concluidas'),
+                    Tab(text: 'Canceladas'),
+                  ],
+                ),
+              ),
+              IconButton(
+                tooltip: 'Ler placa e abrir check-list',
+                icon: const Icon(Icons.center_focus_strong),
+                color: AppColors.gdmBlue,
+                onPressed: _lerPlacaParaChecklist,
+              ),
             ],
           ),
         ),

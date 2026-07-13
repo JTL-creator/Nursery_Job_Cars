@@ -15,7 +15,7 @@ import { useDebounce } from '../hooks/useDebounce';
 import { runAction } from '../hooks/useApiData';
 import { useI18n } from '../hooks/useI18n';
 
-const PERFIS: PerfilNome[] = ['USUARIO', 'RESPONSAVEL', 'GERENTE', 'ADMINISTRADOR'];
+const PERFIS: PerfilNome[] = ['USUARIO', 'RESPONSAVEL', 'GERENTE', 'ADMINISTRADOR', 'VIGILANTE'];
 const STATUS: StatusUsuario[] = ['ATIVO', 'INATIVO', 'BLOQUEADO'];
 
 export default function UsuariosPage() {

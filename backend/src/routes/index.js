@@ -8,6 +8,7 @@ router.use('/reservas', require('./reservasRoutes'));
 router.use('/checklists', require('./checklistRoutes'));
 router.use('/notificacoes', require('./notificacaoRoutes'));
 router.use('/analytics', require('./analyticsRoutes'));
+router.use('/portaria', require('./portariaRoutes'));
 
 router.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });

@@ -1,4 +1,4 @@
-﻿export type PerfilNome = 'USUARIO' | 'ADMINISTRADOR' | 'GERENTE' | 'RESPONSAVEL';
+﻿export type PerfilNome = 'USUARIO' | 'ADMINISTRADOR' | 'GERENTE' | 'RESPONSAVEL' | 'VIGILANTE';
 export type StatusUsuario = 'ATIVO' | 'INATIVO' | 'BLOQUEADO';
 
 export interface Usuario {
